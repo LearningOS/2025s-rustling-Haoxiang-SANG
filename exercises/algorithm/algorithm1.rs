@@ -2,7 +2,7 @@
 	single linked list merge
 	This problem requires you to merge two ordered singly linked lists into one ordered singly linked list
 */
-// I AM NOT DONE
+
 
 use std::fmt::{self, Display, Formatter};
 use std::ptr::NonNull;
@@ -29,13 +29,13 @@ struct LinkedList<T> {
     end: Option<NonNull<Node<T>>>,
 }
 
-impl<T> Default for LinkedList<T> {
+impl<T: std::cmp::PartialOrd> Default for LinkedList<T> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<T> LinkedList<T> {
+impl<T: std::cmp::PartialOrd> LinkedList<T> {
     pub fn new() -> Self {
         Self {
             length: 0,
@@ -69,15 +69,48 @@ impl<T> LinkedList<T> {
             },
         }
     }
-	pub fn merge(list_a:LinkedList<T>,list_b:LinkedList<T>) -> Self
-	{
-		//TODO
-		Self {
-            length: 0,
-            start: None,
-            end: None,
+    pub fn merge(mut list_a: LinkedList<T>, mut list_b: LinkedList<T>) -> Self {
+        let mut merged = LinkedList::new();
+
+        // 获取 a 和 b 的头指针
+        let mut a_ptr = list_a.start;
+        let mut b_ptr = list_b.start;
+
+        while let (Some(a_node), Some(b_node)) = (a_ptr, b_ptr) {
+            let a_val = unsafe { &(*a_node.as_ptr()).val };
+            let b_val = unsafe { &(*b_node.as_ptr()).val };
+
+            if a_val <= b_val {
+                // pop a 节点
+                let next = unsafe { (*a_node.as_ptr()).next };
+                let val = unsafe { std::ptr::read(a_val) }; // 拷贝 val
+                merged.add(val);
+                a_ptr = next;
+            } else {
+                // pop b 节点
+                let next = unsafe { (*b_node.as_ptr()).next };
+                let val = unsafe { std::ptr::read(b_val) };
+                merged.add(val);
+                b_ptr = next;
+            }
         }
-	}
+
+        // 把 list_a 或 list_b 中剩下的节点拷贝进来
+        while let Some(a_node) = a_ptr {
+            let val = unsafe { std::ptr::read(&(*a_node.as_ptr()).val) };
+            merged.add(val);
+            a_ptr = unsafe { (*a_node.as_ptr()).next };
+        }
+
+        while let Some(b_node) = b_ptr {
+            let val = unsafe { std::ptr::read(&(*b_node.as_ptr()).val) };
+            merged.add(val);
+            b_ptr = unsafe { (*b_node.as_ptr()).next };
+        }
+
+        merged
+    }
+
 }
 
 impl<T> Display for LinkedList<T>
